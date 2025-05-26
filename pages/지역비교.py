@@ -58,5 +58,5 @@ fig.update_layout(
 )
 
 # 출력
-st.title("👥 지역별 총인구 비교 (2015~2020)")
+st.title("👥 지역별 총인구 비교 (2010~2024)")
 st.plotly_chart(fig, use_container_width=True)
