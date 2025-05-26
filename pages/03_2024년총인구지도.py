@@ -21,7 +21,6 @@ region_coords = {
     "경상북도": [36.4919, 128.8889],
     "경상남도": [35.4606, 128.2132],
     "제주특별자치도": [33.4996, 126.5312],
-    "전국": [36.5, 127.5]  # 이후 제외 예정
 }
 
 # CSV 파일 로드
@@ -29,20 +28,24 @@ df = pd.read_csv("2024년_연령별인구현황.csv", encoding='cp949')
 
 # 지역명 정리
 df['지역명'] = df['행정구역'].str.extract(r'([\w\s]+)')
-
-# 전국 제외
 df = df[df['지역명'] != '전국']
 
 # 총인구수 숫자형 변환
 df['총인구수'] = df['총인구수'].str.replace(',', '').astype(int)
 
-# 위경도 추가
+# 위경도 매핑
 df['lat'] = df['지역명'].map(lambda x: region_coords.get(x, [None, None])[0])
 df['lon'] = df['지역명'].map(lambda x: region_coords.get(x, [None, None])[1])
 
+# 좌표 누락된 행 제거
+df_map = df.dropna(subset=["lat", "lon"])
+
+# (선택) 버블이 들어갈 데이터 확인용
+# st.dataframe(df_map[['지역명', '총인구수', 'lat', 'lon']])
+
 # 지도 시각화
 fig = px.scatter_mapbox(
-    df,
+    df_map,
     lat='lat',
     lon='lon',
     size='총인구수',
@@ -52,7 +55,7 @@ fig = px.scatter_mapbox(
     hover_data={'총인구수': True, 'lat': False, 'lon': False},
     size_max=60,
     zoom=5.5,
-    center={"lat": 36.5, "lon": 127.8},  # 대한민국 중심
+    center={"lat": 36.5, "lon": 127.8},
     mapbox_style='open-street-map',
     title='🗺️ 2024년 시도별 총인구수 (버블 지도)'
 )
