@@ -7,7 +7,7 @@ st.title("📊 연도별 시도별 총인구수 애니메이션")
 
 # CSV 파일 불러오기
 try:
-    df = pd.read_csv("201012_202412_연령별인구현황_연간_전국.csv", encoding='cp949')
+    df = pd.read_csv("201012_202412_연령별인구현황_연간.csv", encoding='cp949')
 except Exception as e:
     st.error(f"CSV 파일을 불러오는 중 오류 발생: {e}")
     st.stop()
