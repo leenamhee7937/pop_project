@@ -2,22 +2,23 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+st.set_page_config(page_title="시도별 인구 애니메이션", layout="centered")
 st.title("📊 선택한 시도의 연도별 총인구수 애니메이션 (2010~2024)")
 
 # CSV 불러오기
 try:
     df = pd.read_csv("201012_202412_연령별인구현황_연간.csv", encoding="cp949")
 except Exception as e:
-    st.error(f"CSV 파일을 불러오는 중 오류 발생: {e}")
+    st.error(f"❌ CSV 파일을 불러오는 중 오류 발생: {e}")
     st.stop()
 
-# 지역명 추출
+# 지역명 추출 (예: "서울특별시 (1100000000)" → "서울특별시")
 df["지역명"] = df["행정구역"].str.extract(r"^([\w\s]+)").squeeze()
 
-# 총인구수 컬럼 추출
+# 총인구수 컬럼만 추출
 total_cols = [col for col in df.columns if "거주자_총인구수" in col and "연령구간" not in col]
 
-# long-form 변환
+# long-form 데이터 변환
 df_long = pd.melt(
     df,
     id_vars="지역명",
@@ -26,10 +27,10 @@ df_long = pd.melt(
     value_name="인구수"
 )
 
-# 연도 추출
+# 연도 추출 (예: "2010년_거주자_총인구수" → "2010")
 df_long["연도"] = df_long["연도"].str.extract(r"(\d{4})")
 
-# 인구수 정제
+# 인구수 숫자형으로 변환
 df_long["인구수"] = (
     df_long["인구수"]
     .astype(str)
@@ -41,14 +42,14 @@ df_long["인구수"] = (
     .astype(int)
 )
 
-# 지역 선택
+# 지역 선택 위젯
 regions = sorted(df_long["지역명"].dropna().unique())
 selected_region = st.selectbox("📍 시도를 선택하세요", regions)
 
-# 선택한 지역 필터링
+# 선택된 지역 데이터 필터링
 df_selected = df_long[df_long["지역명"] == selected_region]
 
-# 가로 막대 애니메이션 생성
+# Plotly 애니메이션 가로 막대 그래프 생성
 fig = px.bar(
     df_selected,
     x="인구수",
@@ -60,6 +61,7 @@ fig = px.bar(
     title=f"📈 {selected_region}의 연도별 총인구수 변화"
 )
 
+# 그래프 스타일 설정
 fig.update_layout(
     height=600,
     xaxis_title="총인구 수",
@@ -70,4 +72,5 @@ fig.update_layout(
     yaxis=dict(showline=True, linecolor="black", showgrid=True, gridcolor="lightgray")
 )
 
+# 그래프 출력
 st.plotly_chart(fig, use_container_width=True)
