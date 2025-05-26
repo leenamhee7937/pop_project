@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # CSV 파일 경로
-csv_file = "201512_202012_연령별인구현황_연간_전국.csv"
+csv_file = "201012_202412_연령별인구현황_연간_전국.csv"
 
 # 데이터 로드
 df = pd.read_csv(csv_file, encoding='cp949')
