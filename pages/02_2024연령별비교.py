@@ -8,6 +8,9 @@ df = pd.read_csv("2024년_연령별인구현황.csv", encoding='cp949')
 # 지역명 추출
 df["지역명"] = df["행정구역"].str.extract(r"([\w\s]+)")
 
+# '전국' 제외
+df = df[df["지역명"] != "전국"]
+
 # 연령대 컬럼 필터링: 총인구수는 제외
 age_columns = [col for col in df.columns if (("~" in col or "100세" in col) and "총인구수" not in col)]
 selected_age = st.selectbox("📅 연령대를 선택하세요", age_columns)
