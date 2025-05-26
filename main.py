@@ -42,5 +42,5 @@ fig.update_layout(
 )
 
 # Streamlit 출력
-st.title("📈 연도별 지역별 총인구 변화 (2015~2020)")
+st.title("📈 연도별 지역별 총인구 변화 (2010~2020)")
 st.plotly_chart(fig, use_container_width=True)
