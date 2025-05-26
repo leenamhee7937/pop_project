@@ -9,7 +9,7 @@ csv_file = "201012_202412_연령별인구현황_연간_전국.csv"
 df = pd.read_csv(csv_file, encoding='cp949')
 
 # 총인구수 컬럼만 추출
-total_columns = [col for col in df.columns if '총인구수' in col and '거주자' in col]
+total_columns = [col for col in df.columns ]
 years = [col.split('_')[0] for col in total_columns]
 
 # 지역 이름 정리 (예: '서울특별시  (1100000000)' → '서울특별시')
