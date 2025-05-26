@@ -2,75 +2,36 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="시도별 인구 애니메이션", layout="centered")
-st.title("📊 선택한 시도의 연도별 총인구수 애니메이션 (2010~2024)")
+# CSV 파일 불러오기
+file_path = "201012_202412_연령별인구현황_연간.csv"
+df = pd.read_csv(file_path, encoding='cp949')
 
-# CSV 불러오기
-try:
-    df = pd.read_csv("201012_202412_연령별인구현황_연간.csv", encoding="cp949")
-except Exception as e:
-    st.error(f"❌ CSV 파일을 불러오는 중 오류 발생: {e}")
-    st.stop()
+# 서울특별시 행 추출 후 전처리
+seoul_row = df[df['행정구역'].str.contains("서울특별시")].iloc[0, 1:]
+seoul_population = seoul_row.str.replace(',', '').astype(int)
+years = seoul_population.index.str.extract(r'(\d{4})')[0]
 
-# 지역명 추출 (예: "서울특별시 (1100000000)" → "서울특별시")
-df["지역명"] = df["행정구역"].str.extract(r"^([\w\s]+)").squeeze()
+# 데이터프레임 생성
+seoul_df = pd.DataFrame({'연도': years, '인구수': seoul_population.values})
 
-# 총인구수 컬럼만 추출
-total_cols = [col for col in df.columns if "거주자_총인구수" in col and "연령구간" not in col]
+# 숫자 단위 조정 (예: 백만 단위)
+seoul_df['인구수_백만명'] = seoul_df['인구수'] / 1_000_000
 
-# long-form 데이터 변환
-df_long = pd.melt(
-    df,
-    id_vars="지역명",
-    value_vars=total_cols,
-    var_name="연도",
-    value_name="인구수"
-)
+# Streamlit 제목
+st.title("서울특별시 연도별 인구 변화 애니메이션")
 
-# 연도 추출 (예: "2010년_거주자_총인구수" → "2010")
-df_long["연도"] = df_long["연도"].str.extract(r"(\d{4})")
-
-# 인구수 숫자형으로 변환
-df_long["인구수"] = (
-    df_long["인구수"]
-    .astype(str)
-    .str.replace(",", "", regex=False)
-    .str.strip()
-    .replace("", "0")
-    .astype(float)
-    .fillna(0)
-    .astype(int)
-)
-
-# 지역 선택 위젯
-regions = sorted(df_long["지역명"].dropna().unique())
-selected_region = st.selectbox("📍 시도를 선택하세요", regions)
-
-# 선택된 지역 데이터 필터링
-df_selected = df_long[df_long["지역명"] == selected_region]
-
-# Plotly 애니메이션 가로 막대 그래프 생성
+# 애니메이션 바 차트 생성
 fig = px.bar(
-    df_selected,
-    x="인구수",
-    y="연도",
-    orientation="h",
-    animation_frame="연도",
-    range_x=[0, df_selected["인구수"].max() * 1.1],
-    labels={"인구수": "총인구수", "연도": "연도"},
-    title=f"📈 {selected_region}의 연도별 총인구수 변화"
+    seoul_df,
+    x='인구수_백만명',
+    y='연도',
+    orientation='h',
+    animation_frame='연도',
+    range_x=[seoul_df['인구수_백만명'].min() - 0.2, seoul_df['인구수_백만명'].max() + 0.2],
+    title="서울특별시 연도별 인구수 (단위: 백만 명)",
+    labels={'인구수_백만명': '인구수 (백만 명)', '연도': '연도'},
+    height=600
 )
 
-# 그래프 스타일 설정
-fig.update_layout(
-    height=600,
-    xaxis_title="총인구 수",
-    yaxis_title="연도",
-    yaxis=dict(autorange="reversed"),
-    plot_bgcolor="white",
-    xaxis=dict(showline=True, linecolor="black", showgrid=True, gridcolor="lightgray"),
-    yaxis=dict(showline=True, linecolor="black", showgrid=True, gridcolor="lightgray")
-)
-
-# 그래프 출력
-st.plotly_chart(fig, use_container_width=True)
+# 차트 표시
+st.plotly_chart(fig)
