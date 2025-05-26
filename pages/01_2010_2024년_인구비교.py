@@ -1,62 +1,66 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 
-# CSV 파일 경로
-csv_file = "201012_202412_연령별인구현황_연간_전국.csv"
+# CSV 파일 불러오기
+df = pd.read_csv("2024년_연령별인구현황.csv", encoding='cp949')
 
-# 데이터 로드
-df = pd.read_csv(csv_file, encoding='cp949')
+# 지역명 추출
+df["지역명"] = df["행정구역"].str.extract(r"([가-힣]+[시도])")
+df = df[df["지역명"] != "전국"]
 
-# 총인구수 컬럼만 추출
-total_columns = [col for col in df.columns if '총인구수' in col and '거주자' in col]
-years = [col.split('_')[0] for col in total_columns]
+# 연령대 컬럼 필터링
+age_columns = [col for col in df.columns if ("세" in col and "~" in col) or "100세 이상" in col]
 
-# 지역 이름 정리
-df['지역명'] = df['행정구역'].str.extract(r'([\w\s]+)')
+# 문자열 → 숫자형 변환
+for col in age_columns:
+    df[col] = df[col].str.replace(",", "").astype(int)
 
-# 지역 선택 (두 개)
-region_list = df['지역명'].unique()
-col1, col2 = st.columns(2)
-with col1:
-    region1 = st.selectbox("📍 첫 번째 지역 선택", region_list, index=0)
-with col2:
-    region2 = st.selectbox("📍 두 번째 지역 선택", region_list, index=1)
-
-# 각 지역 데이터 추출
-row1 = df[df['지역명'] == region1]
-row2 = df[df['지역명'] == region2]
-
-pop1 = row1[total_columns].iloc[0].str.replace(',', '').astype(int)
-pop2 = row2[total_columns].iloc[0].str.replace(',', '').astype(int)
-
-# Plotly 시각화
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(
-    x=years,
-    y=pop1,
-    mode='lines+markers',
-    name=region1,
-    line=dict(color='blue')
-))
-
-fig.add_trace(go.Scatter(
-    x=years,
-    y=pop2,
-    mode='lines+markers',
-    name=region2,
-    line=dict(color='orange')
-))
-
-fig.update_layout(
-    title=f"📊 {region1} vs {region2} 총인구 비교 (2010~2024)",
-    xaxis_title="연도",
-    yaxis_title="총인구 수",
-    height=600,
-    hovermode='x unified'
+# ✅ 사용자에게 시도 여러 개 선택 받기 (제한 없음)
+all_regions = df["지역명"].unique().tolist()
+selected_regions = st.multiselect(
+    "🏙️ 비교할 시도를 선택하세요 (복수 선택 가능)",
+    all_regions,
+    default=all_regions[:2]  # 기본값 2개 선택
 )
 
-# 출력
-st.title("👥 지역별 총인구 비교 (2010~2024)")
-st.plotly_chart(fig, use_container_width=True)
+# 제목 출력
+st.title("🏙️ 선택한 시도별 연령대 인구 분포")
+
+# 선택한 시도가 하나 이상이면 그래프 출력
+if selected_regions:
+    # 선택한 시도로 필터링
+    filtered_df = df[df["지역명"].isin(selected_regions)]
+
+    # melt 변환
+    df_melted = filtered_df.melt(
+        id_vars=["지역명"], 
+        value_vars=age_columns,
+        var_name="연령대", 
+        value_name="인구수"
+    )
+
+    # Plotly 누적 막대 그래프 생성
+    fig = px.bar(
+        df_melted,
+        x="지역명",
+        y="인구수",
+        color="연령대",
+        title=f"2024년 연령대별 인구 (선택 시도)",
+        labels={"지역명": "지역", "인구수": "인구 수"},
+        text_auto=True
+    )
+
+    # 그래프 스타일 조정
+    fig.update_layout(
+        xaxis_tickangle=-45,
+        yaxis_tickformat=",",
+        barmode='stack',
+        legend_title_text="연령대",
+        height=800
+    )
+
+    # 그래프 출력
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("🔍 하나 이상의 시도를 선택해주세요.")
