@@ -36,12 +36,13 @@ fig = px.bar(
     text_auto=True
 )
 
-# 시각화 스타일 조정
+# 스타일 + 높이(height) 조정
 fig.update_layout(
     xaxis_tickangle=-45,
     yaxis_tickformat=",",
-    barmode='stack',  # 누적 막대그래프
-    legend_title_text="연령대"
+    barmode='stack',
+    legend_title_text="연령대",
+    height=800  # ✅ 세로로 더 길게
 )
 
 # 그래프 출력
