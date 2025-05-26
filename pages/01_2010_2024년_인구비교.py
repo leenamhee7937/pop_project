@@ -1,58 +1,71 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 
-# CSV 파일 불러오기
-df = pd.read_csv("2024년_연령별인구현황.csv", encoding='cp949')
+# CSV 파일 경로
+mf_file = "202504_202504_연령별인구현황_월간_남여구분.csv"
+total_file = "202504_202504_연령별인구현황_월간_남여합계.csv"
 
-# 지역명 추출
-df["지역명"] = df["행정구역"].str.extract(r"([가-힣]+[시도])")
-df = df[df["지역명"] != "전국"]
+# 파일 로드
+df_mf = pd.read_csv(mf_file, encoding='cp949')
+df_total = pd.read_csv(total_file, encoding='cp949')
 
-# 연령대 컬럼 필터링
-age_columns = [col for col in df.columns if ("세" in col and "~" in col) or "100세 이상" in col]
+# 시도명 리스트 생성
+region_list = df_total['행정구역'].str.extract(r'([\w\s]+)\s+\(')[0].dropna().unique()
 
-# 문자열 → 숫자형 변환
-for col in age_columns:
-    df[col] = df[col].str.replace(",", "").astype(int)
+# 사용자 선택
+selected_region = st.selectbox("📍 지역을 선택하세요", region_list)
 
-# ✅ 사용자에게 시도 2개 선택 받기
-all_regions = df["지역명"].unique().tolist()
-selected_regions = st.multiselect("🏙️ 비교할 시도 2곳을 선택하세요", all_regions, default=all_regions[:2])
+# 선택된 지역 데이터 필터링
+df_mf_region = df_mf[df_mf['행정구역'].str.contains(selected_region)]
+df_total_region = df_total[df_total['행정구역'].str.contains(selected_region)]
 
-# 선택한 시도로 필터링
-filtered_df = df[df["지역명"].isin(selected_regions)]
+# 컬럼 분류
+male_cols = [col for col in df_mf.columns if '2025년04월_남_' in col and '세' in col]
+female_cols = [col for col in df_mf.columns if '2025년04월_여_' in col and '세' in col]
+total_cols = [col for col in df_total.columns if '2025년04월_계_' in col and '세' in col]
+ages = [col.split('_')[-1] for col in total_cols]
 
-# melt 변환
-df_melted = filtered_df.melt(
-    id_vars=["지역명"], 
-    value_vars=age_columns,
-    var_name="연령대", 
-    value_name="인구수"
+# 문자열 → 숫자 변환 함수
+def clean_data(series):
+    return (
+        series
+        .str.replace(',', '', regex=False)
+        .astype(float)
+        .fillna(0)
+        .astype(int)
+        .values
+    )
+
+# 남/여/합계 데이터 추출
+male_pop = clean_data(df_mf_region[male_cols].iloc[0])
+female_pop = clean_data(df_mf_region[female_cols].iloc[0])
+total_pop = clean_data(df_total_region[total_cols].iloc[0])
+
+# 📊 막대그래프 (합계)
+bar_fig = go.Figure()
+bar_fig.add_trace(go.Bar(x=ages, y=total_pop, name='전체', marker=dict(color='royalblue')))
+bar_fig.update_layout(
+    title=f'{selected_region} - 연령별 인구 합계 (2025년 4월)',
+    xaxis_title='연령',
+    yaxis_title='인구 수',
+    bargap=0.2,
+    height=500
 )
 
-# 제목 출력
-st.title("🏙️ 선택한 시도별 연령대 인구 분포")
-
-# Plotly 누적 막대 그래프 생성
-fig = px.bar(
-    df_melted,
-    x="지역명",
-    y="인구수",
-    color="연령대",
-    title=f"2024년 연령대별 인구 (선택 시도)",
-    labels={"지역명": "지역", "인구수": "인구 수"},
-    text_auto=True
+# 📈 선그래프 (남 vs 여)
+line_fig = go.Figure()
+line_fig.add_trace(go.Scatter(x=ages, y=male_pop, mode='lines+markers', name='남성'))
+line_fig.add_trace(go.Scatter(x=ages, y=female_pop, mode='lines+markers', name='여성'))
+line_fig.update_layout(
+    title=f'{selected_region} - 연령별 남녀 인구 비교 (2025년 4월)',
+    xaxis_title='연령',
+    yaxis_title='인구 수',
+    hovermode='x unified',
+    height=500
 )
 
-# 그래프 스타일 조정
-fig.update_layout(
-    xaxis_tickangle=-45,
-    yaxis_tickformat=",",
-    barmode='stack',
-    legend_title_text="연령대",
-    height=800
-)
-
-# 그래프 출력
-st.plotly_chart(fig, use_container_width=True)
+# 출력
+st.title("📊 2025년 4월 지역별 연령별 인구 통계 시각화")
+st.plotly_chart(bar_fig, use_container_width=True)
+st.plotly_chart(line_fig, use_container_width=True)
