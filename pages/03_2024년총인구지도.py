@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 시도별 위도/경도 정보 (기초 자료)
+# 시도별 위도/경도 정보
 region_coords = {
     "서울특별시": [37.5665, 126.9780],
     "부산광역시": [35.1796, 129.0756],
@@ -21,35 +21,38 @@ region_coords = {
     "경상북도": [36.4919, 128.8889],
     "경상남도": [35.4606, 128.2132],
     "제주특별자치도": [33.4996, 126.5312],
-    "전국": [36.5, 127.5]
+    "전국": [36.5, 127.5]  # 이후 제외 예정
 }
 
-# 데이터 불러오기
+# CSV 파일 로드
 df = pd.read_csv("2024년_연령별인구현황.csv", encoding='cp949')
 
 # 지역명 정리
 df['지역명'] = df['행정구역'].str.extract(r'([\w\s]+)')
 
-# 총인구수 숫자화
+# 전국 제외
+df = df[df['지역명'] != '전국']
+
+# 총인구수 숫자형 변환
 df['총인구수'] = df['총인구수'].str.replace(',', '').astype(int)
 
-# 위도/경도 추가
+# 위경도 추가
 df['lat'] = df['지역명'].map(lambda x: region_coords.get(x, [None, None])[0])
 df['lon'] = df['지역명'].map(lambda x: region_coords.get(x, [None, None])[1])
 
-# 유효한 데이터만 필터링
-df_map = df.dropna(subset=['lat', 'lon'])
-
-# Plotly 지도 시각화
+# 지도 시각화
 fig = px.scatter_mapbox(
-    df_map,
+    df,
     lat='lat',
     lon='lon',
     size='총인구수',
+    color='총인구수',
+    color_continuous_scale='YlOrRd',
     hover_name='지역명',
     hover_data={'총인구수': True, 'lat': False, 'lon': False},
     size_max=60,
-    zoom=5.3,
+    zoom=5.5,
+    center={"lat": 36.5, "lon": 127.8},  # 대한민국 중심
     mapbox_style='open-street-map',
     title='🗺️ 2024년 시도별 총인구수 (버블 지도)'
 )
