@@ -18,22 +18,25 @@ selected_age = st.selectbox("📅 연령대를 선택하세요", age_columns)
 # 숫자형 변환
 df[selected_age] = df[selected_age].str.replace(",", "").astype(int)
 
-# Plotly 막대그래프 생성
+# Plotly 막대그래프 생성 (알록달록하게 만들기 위해 color='지역명' 추가)
 fig = px.bar(
     df,
     x="지역명",
     y=selected_age,
+    color="지역명",  # 여기에서 색상을 다양하게 지정
     title=f"2024년 {selected_age} 인구 - 시도별 비교",
     labels={selected_age: "인구 수", "지역명": "지역"},
-    text=selected_age,
+    text=selected_age
 )
 
+# 텍스트 및 스타일 조정
 fig.update_traces(texttemplate='%{text:,}', textposition='outside')
 fig.update_layout(
     xaxis_tickangle=-45,
     yaxis_tickformat=",",
     uniformtext_minsize=8,
-    uniformtext_mode='hide'
+    uniformtext_mode='hide',
+    showlegend=False  # 범례 제거 (원하는 경우 True로 변경)
 )
 
 # Streamlit 출력
