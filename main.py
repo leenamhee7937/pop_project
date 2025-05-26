@@ -35,7 +35,7 @@ fig.add_trace(go.Scatter(
 ))
 
 fig.update_layout(
-    title=f"{selected_region} 총인구 변화 (2015~2020)",
+    title=f"{selected_region} 총인구 변화 (2010~2024)",
     xaxis_title="연도",
     yaxis_title="총인구 수",
     height=500
