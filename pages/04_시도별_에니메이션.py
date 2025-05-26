@@ -14,7 +14,7 @@ except Exception as e:
 # 지역명 추출
 df["지역명"] = df["행정구역"].str.extract(r"^([\w\s]+)").squeeze()
 
-# 총인구수 컬럼만 추출
+# 총인구수 컬럼 추출
 total_cols = [col for col in df.columns if "거주자_총인구수" in col and "연령구간" not in col]
 
 # long-form 변환
@@ -26,10 +26,10 @@ df_long = pd.melt(
     value_name="인구수"
 )
 
-# 연도 정리: '2010년_거주자_총인구수' → '2010'
+# 연도 추출
 df_long["연도"] = df_long["연도"].str.extract(r"(\d{4})")
 
-# 인구수 숫자 변환
+# 인구수 정제
 df_long["인구수"] = (
     df_long["인구수"]
     .astype(str)
@@ -42,13 +42,13 @@ df_long["인구수"] = (
 )
 
 # 지역 선택
-region_list = sorted(df_long["지역명"].dropna().unique())
-selected_region = st.selectbox("📍 시도를 선택하세요", region_list)
+regions = sorted(df_long["지역명"].dropna().unique())
+selected_region = st.selectbox("📍 시도를 선택하세요", regions)
 
 # 선택한 지역 필터링
 df_selected = df_long[df_long["지역명"] == selected_region]
 
-# 가로 막대 애니메이션 그래프 생성
+# 가로 막대 애니메이션 생성
 fig = px.bar(
     df_selected,
     x="인구수",
@@ -57,28 +57,17 @@ fig = px.bar(
     animation_frame="연도",
     range_x=[0, df_selected["인구수"].max() * 1.1],
     labels={"인구수": "총인구수", "연도": "연도"},
-    title=f"📈 {selected_region}의 연도별 총인구수 변화 (가로 막대 애니메이션)"
+    title=f"📈 {selected_region}의 연도별 총인구수 변화"
 )
 
 fig.update_layout(
     height=600,
     xaxis_title="총인구 수",
     yaxis_title="연도",
-    yaxis=dict(autorange="reversed"),  # 최근 연도가 위에 오도록
+    yaxis=dict(autorange="reversed"),
     plot_bgcolor="white",
-    xaxis=dict(
-        showline=True,
-        linecolor="black",
-        showgrid=True,
-        gridcolor="lightgray"
-    ),
-    yaxis=dict(
-        showline=True,
-        linecolor="black",
-        showgrid=True,
-        gridcolor="lightgray"
-    )
+    xaxis=dict(showline=True, linecolor="black", showgrid=True, gridcolor="lightgray"),
+    yaxis=dict(showline=True, linecolor="black", showgrid=True, gridcolor="lightgray")
 )
 
-# 시각화 출력
 st.plotly_chart(fig, use_container_width=True)
