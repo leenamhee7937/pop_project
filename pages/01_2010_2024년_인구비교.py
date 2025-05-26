@@ -3,69 +3,60 @@ import pandas as pd
 import plotly.graph_objects as go
 
 # CSV 파일 경로
-mf_file = "202504_202504_연령별인구현황_월간_남여구분.csv"
-total_file = "202504_202504_연령별인구현황_월간_남여합계.csv"
+csv_file = "201512_202012_연령별인구현황_연간_전국.csv"
 
-# 파일 로드
-df_mf = pd.read_csv(mf_file, encoding='cp949')
-df_total = pd.read_csv(total_file, encoding='cp949')
+# 데이터 로드
+df = pd.read_csv(csv_file, encoding='cp949')
 
-# 시도명 리스트 생성
-region_list = df_total['행정구역'].str.extract(r'([\w\s]+)\s+\(')[0].dropna().unique()
+# 총인구수 컬럼만 추출
+total_columns = [col for col in df.columns if '총인구수' in col and '거주자' in col]
+years = [col.split('_')[0] for col in total_columns]
 
-# 사용자 선택
-selected_region = st.selectbox("📍 지역을 선택하세요", region_list)
+# 지역 이름 정리
+df['지역명'] = df['행정구역'].str.extract(r'([\w\s]+)')
 
-# 선택된 지역 데이터 필터링
-df_mf_region = df_mf[df_mf['행정구역'].str.contains(selected_region)]
-df_total_region = df_total[df_total['행정구역'].str.contains(selected_region)]
+# 지역 선택 (두 개)
+region_list = df['지역명'].unique()
+col1, col2 = st.columns(2)
+with col1:
+    region1 = st.selectbox("📍 첫 번째 지역 선택", region_list, index=0)
+with col2:
+    region2 = st.selectbox("📍 두 번째 지역 선택", region_list, index=1)
 
-# 컬럼 분류
-male_cols = [col for col in df_mf.columns if '2025년04월_남_' in col and '세' in col]
-female_cols = [col for col in df_mf.columns if '2025년04월_여_' in col and '세' in col]
-total_cols = [col for col in df_total.columns if '2025년04월_계_' in col and '세' in col]
-ages = [col.split('_')[-1] for col in total_cols]
+# 각 지역 데이터 추출
+row1 = df[df['지역명'] == region1]
+row2 = df[df['지역명'] == region2]
 
-# 문자열 → 숫자 변환 함수
-def clean_data(series):
-    return (
-        series
-        .str.replace(',', '', regex=False)
-        .astype(float)
-        .fillna(0)
-        .astype(int)
-        .values
-    )
+pop1 = row1[total_columns].iloc[0].str.replace(',', '').astype(int)
+pop2 = row2[total_columns].iloc[0].str.replace(',', '').astype(int)
 
-# 남/여/합계 데이터 추출
-male_pop = clean_data(df_mf_region[male_cols].iloc[0])
-female_pop = clean_data(df_mf_region[female_cols].iloc[0])
-total_pop = clean_data(df_total_region[total_cols].iloc[0])
+# Plotly 시각화
+fig = go.Figure()
 
-# 📊 막대그래프 (합계)
-bar_fig = go.Figure()
-bar_fig.add_trace(go.Bar(x=ages, y=total_pop, name='전체', marker=dict(color='royalblue')))
-bar_fig.update_layout(
-    title=f'{selected_region} - 연령별 인구 합계 (2025년 4월)',
-    xaxis_title='연령',
-    yaxis_title='인구 수',
-    bargap=0.2,
-    height=500
-)
+fig.add_trace(go.Scatter(
+    x=years,
+    y=pop1,
+    mode='lines+markers',
+    name=region1,
+    line=dict(color='blue')
+))
 
-# 📈 선그래프 (남 vs 여)
-line_fig = go.Figure()
-line_fig.add_trace(go.Scatter(x=ages, y=male_pop, mode='lines+markers', name='남성'))
-line_fig.add_trace(go.Scatter(x=ages, y=female_pop, mode='lines+markers', name='여성'))
-line_fig.update_layout(
-    title=f'{selected_region} - 연령별 남녀 인구 비교 (2025년 4월)',
-    xaxis_title='연령',
-    yaxis_title='인구 수',
-    hovermode='x unified',
-    height=500
+fig.add_trace(go.Scatter(
+    x=years,
+    y=pop2,
+    mode='lines+markers',
+    name=region2,
+    line=dict(color='orange')
+))
+
+fig.update_layout(
+    title=f"📊 {region1} vs {region2} 총인구 비교 (2015~2020)",
+    xaxis_title="연도",
+    yaxis_title="총인구 수",
+    height=600,
+    hovermode='x unified'
 )
 
 # 출력
-st.title("📊 2025년 4월 지역별 연령별 인구 통계 시각화")
-st.plotly_chart(bar_fig, use_container_width=True)
-st.plotly_chart(line_fig, use_container_width=True)
+st.title("👥 지역별 총인구 비교 (2015~2020)")
+st.plotly_chart(fig, use_container_width=True)
