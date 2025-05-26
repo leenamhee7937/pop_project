@@ -29,27 +29,28 @@ fig = px.bar(
     text=selected_age
 )
 
-# 텍스트 및 스타일 조정
+# 텍스트 및 스타일 조정 + x축/왼쪽 y축 선만 굵게
 fig.update_traces(texttemplate='%{text:,}', textposition='outside')
 fig.update_layout(
     xaxis_tickangle=-45,
     yaxis_tickformat=",",
     uniformtext_minsize=8,
     uniformtext_mode='hide',
-    showlegend=False,  # 범례 생략 (필요 시 True)
-    
-    # ✅ x축, y축 선 굵기 및 색상 추가
+    showlegend=False,
+
+    # ✅ 아래쪽 x축 선만 굵게
     xaxis=dict(
         showline=True,
-        linewidth=2,       # 선 굵기
-        linecolor='black', # 선 색상
-        mirror=True        # 양쪽 축 모두에 선을 그림
+        linecolor='black',
+        linewidth=2,
+        mirror=False
     ),
+    # ✅ 왼쪽 y축 선만 굵게
     yaxis=dict(
         showline=True,
-        linewidth=2,
         linecolor='black',
-        mirror=True
+        linewidth=2,
+        mirror=False
     )
 )
 
