@@ -77,5 +77,6 @@ else:
     )
 
     # 출력
+    st.title("❓  15년간의 인구변화를 한 눈에^^")
     st.title("📈 연도별 지역별 총인구 변화 (2010~2024)")
     st.plotly_chart(fig, use_container_width=True)
