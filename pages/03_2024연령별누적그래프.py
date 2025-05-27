@@ -18,7 +18,7 @@ for col in age_columns:
 
 # ✅ 사용자에게 시도 2개 선택 받기
 all_regions = df["지역명"].unique().tolist()
-selected_regions = st.multiselect("🏙️ 비교할 시도를 선택하세요", all_regions, default=all_regions[:2])
+selected_regions = st.multiselect("🏙️ 비교할 시도를 선택하세요", all_regions, default=all_regions[2:4])
 
 # 선택한 시도로 필터링
 filtered_df = df[df["지역명"].isin(selected_regions)]
