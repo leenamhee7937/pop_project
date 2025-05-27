@@ -54,7 +54,7 @@ else:
         title=f"{selected_region} 총인구 변화 (2010~2024)",
         xaxis_title="연도",
         yaxis_title="총인구 수",
-        height=500,
+        height=400,
         xaxis=dict(
             showline=True,
             linecolor='black',
